@@ -1,12 +1,11 @@
-Para levantar el client y el serve (front y back) 
+Intentamos realizar una plataforma web que conecta dueños de mascotas con paseadores de perros, permitiendo encontrar cuidadores confiables según barrio, disponibilidad y reputación.  
 
--"concurrently"-
+Dependencia -"concurrently"- ejecutar varios comandos al mismo tiempo en la misma terminal.
 
 Para el front: 
 
 "axios": Cliente HTTP para peticiones al servidor GET, POST, PUT, DELETE mas facil y parsea json automaticamente
 "lucide-react": Librería de iconos para React ej shield eye etc
-"mipaseo": la referencia para el directorio padre
 "react": Librería base de React, componenete y estados
 "react-dom": renderizado 
 "react-hook-form": Manejo de formularios en React validación, manejo de errores, registro de campos
@@ -23,7 +22,6 @@ Para el Back
 "express": Framework principal que maneja todas las rutas HTTP (GET, POST, PATCH, DELETE)
 "helmet": Protege contra vulnerabilidades comunes
 "jsonwebtoken": Genera tokens de acceso (15 minutos) y refresh (30 días) Verifica tokens en el middleware de autenticación
-"mipaseo": 
 "mongoose": Conecta con la base de datos MongoDB Define esquemas y modelos (User, Pet, WalkRequest, Review)
 - Maneja validaciones, índices y relaciones entre documentos
 "multer": Configurado con límite de 5MB por archivo

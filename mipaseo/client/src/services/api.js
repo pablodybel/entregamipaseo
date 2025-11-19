@@ -29,7 +29,10 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // No intentar refrescar el token si el error viene del endpoint de login o register
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/register')
+    
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true
 
       try {
@@ -52,7 +55,10 @@ api.interceptors.response.use(
       } catch (refreshError) {
         localStorage.removeItem('accessToken')
         localStorage.removeItem('refreshToken')
-        window.location.href = '/login'
+        // Verificar si la ruta actual es de admin para redirigir al login correcto
+        const isAdminRoute = window.location.pathname.startsWith('/admin')
+        const loginPath = isAdminRoute ? '/admin/login' : '/login'
+        window.location.href = loginPath
         return Promise.reject(refreshError)
       }
     }
