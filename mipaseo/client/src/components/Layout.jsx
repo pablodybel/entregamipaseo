@@ -30,7 +30,7 @@ const Layout = () => {
   ]
 
   const adminNavigation = [ /*Navegación para el rol de administrador */ 
-    { name: 'Dashboard', href: '/admin/dashboard' },
+    { name: 'Inicio', href: '/admin/dashboard' },
     { name: 'Dueños', href: '/admin/usuarios?role=OWNER' },
     { name: 'Paseadores', href: '/admin/usuarios?role=WALKER' }
   ]

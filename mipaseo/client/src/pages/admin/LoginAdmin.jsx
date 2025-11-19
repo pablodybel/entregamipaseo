@@ -38,7 +38,7 @@ const LoginAdmin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
@@ -49,27 +49,27 @@ const LoginAdmin = () => {
           </div>
           <div className="mt-6 flex items-center justify-center gap-3">
             <Shield className="h-8 w-8 text-yellow-400" />
-            <h2 className="text-4xl font-bold text-white">
+            <h2 className="text-4xl font-bold text-gray-900">
               <span className="logo-mipaseo text-4xl">
-                <span className="mi text-white">Mi</span><span className="paseo text-yellow-400">Paseo</span>
+                <span className="mi text-gray-900">Mi</span><span className="paseo text-yellow-400">Paseo</span>
               </span>
             </h2>
             <Shield className="h-8 w-8 text-yellow-400" />
           </div>
-          <p className="mt-3 text-base text-gray-300">
+          <p className="mt-3 text-base text-gray-700">
             Panel de Administración
           </p>
-          <p className="mt-2 text-sm text-gray-400">
+          <p className="mt-2 text-sm text-gray-600">
             Acceso exclusivo para administradores
           </p>
         </div>
 
         {/* Form */}
-        <form className="mt-8 space-y-6 bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8 space-y-6 bg-gray-50 p-8 rounded-xl shadow-lg border border-gray-200" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Correo electrónico
               </label>
               <div className="mt-1 relative">
@@ -85,18 +85,18 @@ const LoginAdmin = () => {
                     }
                   })}
                   type="email"
-                  className="input pl-10 bg-gray-700 text-white border-gray-600 focus:border-yellow-400 focus:ring-yellow-400"
+                  className="input pl-10 bg-white text-gray-900 border-gray-300 focus:border-yellow-400 focus:ring-yellow-400"
                   placeholder="admin@mipaseo.com"
                 />
               </div>
               {errors.email && (
-                <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
               )}
             </div>
 
             {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Contraseña
               </label>
               <div className="mt-1 relative">
@@ -108,7 +108,7 @@ const LoginAdmin = () => {
                     required: 'La contraseña es requerida'
                   })}
                   type={showPassword ? 'text' : 'password'}
-                  className="input pl-10 pr-10 bg-gray-700 text-white border-gray-600 focus:border-yellow-400 focus:ring-yellow-400"
+                  className="input pl-10 pr-10 bg-white text-gray-900 border-gray-300 focus:border-yellow-400 focus:ring-yellow-400"
                   placeholder="••••••••"
                 />
                 <button
@@ -124,15 +124,15 @@ const LoginAdmin = () => {
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
               )}
             </div>
           </div>
 
           {/* Error message */}
           {errors.root && (
-            <div className="bg-red-900/50 border border-red-700 rounded-md p-4">
-              <p className="text-sm text-red-300">{errors.root.message}</p>
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <p className="text-sm text-red-600">{errors.root.message}</p>
             </div>
           )}
 
