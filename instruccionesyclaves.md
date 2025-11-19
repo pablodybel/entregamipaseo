@@ -1,6 +1,11 @@
+npm install en: raiz, client y en server para instalar todas las dependencias
+
+
 npm run dev desde la raiz para levantar el client y el server gracias a la dependencia "concurrently" todo en una sola terminal
 
-para el admin: /admin/login
+-----------------------------------------------------------------
+
+para el admin: localhostxxx/admin/login
 
 usuario: admin@mipaseo.com
 Clave: admin123
