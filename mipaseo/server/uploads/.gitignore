@@ -1,0 +1,7 @@
+# # Ignorar todas las imágenes subidas
+# *
+# # Pero mantener este archivo y .gitkeep
+# !.gitignore
+# !.gitkeep
+
+

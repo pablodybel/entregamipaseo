@@ -1,0 +1,21 @@
+{
+  "name": "mipaseo",
+  "version": "1.0.0",
+  "description": "Aplicación para conectar dueños de mascotas con paseadores",
+  "private": true,
+  "scripts": {
+    "install-all": "npm --prefix server install && npm --prefix client install",
+    "dev": "concurrently \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "seed": "npm --prefix server run seed",
+    "build": "npm --prefix client run build",
+    "lint": "npm --prefix server run lint && npm --prefix client run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": ["mascotas", "paseo", "servicios"],
+  "author": "MiPaseo Team",
+  "license": "MIT"
+}
