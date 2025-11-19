@@ -1,4 +1,10 @@
-npm install en: raiz, client y en server para instalar todas las dependencias
+version de node utilizada v22.17.1
+
+npm install en: 
+1) raiz: ----------- mipaseo/
+2) mipaseo/client
+3) mipaseo/server 
+para instalar todas las dependencias del front y back
 
 
 npm run dev desde la raiz para levantar el client y el server gracias a la dependencia "concurrently" todo en una sola terminal
