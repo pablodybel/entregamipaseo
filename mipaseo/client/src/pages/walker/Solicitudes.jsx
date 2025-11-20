@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useFetch } from '../../hooks/useFetch'
 import { useMutation } from '../../hooks/useMutation'
+import { useQueryClient } from '../../hooks/useQueryClient'
 import { Calendar, Dog, CheckCircle, XCircle, MapPin, Phone, Clock, User, ChevronLeft, ChevronRight } from 'lucide-react'
 import { walkRequestsService } from '../../services/walkRequests'
 import toast from 'react-hot-toast'
@@ -8,28 +9,57 @@ import toast from 'react-hot-toast'
 const Solicitudes = () => {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [viewMode, setViewMode] = useState('month') // 'month' o 'day'
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(5) // Número de solicitudes por página
+  const queryClient = useQueryClient()
 
+  // Cuando cambia el mes o el modo de vista, resetear a la página 1
+  const monthKey = `${selectedDate.getMonth()}-${selectedDate.getFullYear()}-${viewMode}`
+
+  // Obtener todas las solicitudes (sin paginación del backend) para poder filtrar por mes
   const { data: requests, isLoading, refetch } = useFetch(
-    ['walkRequests'],
-    () => walkRequestsService.getMyWalkRequests()
+    ['walkRequests', monthKey],
+    () => walkRequestsService.getMyWalkRequests(null, 1, 1000) // Obtener muchas para tener todas las del mes
   )
 
+  // Resetear página cuando cambia el mes o el modo de vista
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [monthKey])
+
   // Filtrar solicitudes por fecha seleccionada
-  const filteredRequests = useMemo(() => {
+  const allFilteredRequests = useMemo(() => {
     if (!requests?.walkRequests) return []
     
-    return requests.walkRequests.filter(request => {
-      const requestDate = new Date(request.scheduledAt)
-      const selected = new Date(selectedDate)
-      
-      if (viewMode === 'day') {
+    if (viewMode === 'day') {
+      return requests.walkRequests.filter(request => {
+        const requestDate = new Date(request.scheduledAt)
+        const selected = new Date(selectedDate)
         return requestDate.toDateString() === selected.toDateString()
-      } else {
-        return requestDate.getMonth() === selected.getMonth() &&
-               requestDate.getFullYear() === selected.getFullYear()
-      }
-    })
+      })
+    } else {
+      // Filtrar solo las del mes seleccionado
+      return requests.walkRequests.filter(request => {
+        const requestDate = new Date(request.scheduledAt)
+        return requestDate.getMonth() === selectedDate.getMonth() &&
+               requestDate.getFullYear() === selectedDate.getFullYear()
+      })
+    }
   }, [requests, selectedDate, viewMode])
+
+  // Aplicar paginación en el frontend (solo para modo mes)
+  const filteredRequests = useMemo(() => {
+    if (viewMode === 'month') {
+      const startIndex = (currentPage - 1) * itemsPerPage
+      const endIndex = startIndex + itemsPerPage
+      return allFilteredRequests.slice(startIndex, endIndex)
+    }
+    return allFilteredRequests
+  }, [allFilteredRequests, currentPage, itemsPerPage, viewMode])
+
+  // Calcular información de paginación para modo mes
+  const totalItems = allFilteredRequests.length
+  const totalPages = viewMode === 'month' ? Math.ceil(totalItems / itemsPerPage) : 1
 
   // Obtener días con solicitudes en el mes actual
   const daysWithRequests = useMemo(() => {
@@ -51,6 +81,12 @@ const Solicitudes = () => {
     {
       onSuccess: () => {
         refetch()
+        // Invalidar queries relacionadas para actualizar el badge en el Layout
+        queryClient.invalidateQueries(['walkRequests', 'pending'])
+        queryClient.invalidateQueries(['walkRequests', 'pending', 'count'])
+        // Invalidar también las queries de los dueños para que vean el cambio
+        queryClient.invalidateQueries(['walkRequests', 'accepted'])
+        queryClient.invalidateQueries(['walkRequests', 'accepted', 'count'])
         toast.success('Solicitud aceptada')
       },
       onError: (error) => {
@@ -64,6 +100,9 @@ const Solicitudes = () => {
     {
       onSuccess: () => {
         refetch()
+        // Invalidar queries relacionadas para actualizar el badge en el Layout
+        queryClient.invalidateQueries(['walkRequests', 'pending'])
+        queryClient.invalidateQueries(['walkRequests', 'pending', 'count'])
         toast.success('Solicitud rechazada')
       },
       onError: (error) => {
@@ -267,7 +306,10 @@ const Solicitudes = () => {
                 }
               </h2>
               <p className="text-sm text-gray-500">
-                {filteredRequests.length} {filteredRequests.length === 1 ? 'solicitud' : 'solicitudes'}
+                {viewMode === 'month' 
+                  ? `${totalItems} ${totalItems === 1 ? 'solicitud' : 'solicitudes'}`
+                  : `${filteredRequests.length} ${filteredRequests.length === 1 ? 'solicitud' : 'solicitudes'}`
+                }
               </p>
             </div>
             {viewMode === 'day' && (
@@ -281,8 +323,9 @@ const Solicitudes = () => {
           </div>
 
           {filteredRequests.length > 0 ? (
-            <div className="space-y-4">
-              {filteredRequests.map((request) => (
+            <>
+              <div className="space-y-4">
+                {filteredRequests.map((request) => (
                 <div key={request._id} className="card p-6">
                   {/* Header con mascota y estado */}
                   <div className="flex items-center justify-between mb-4">
@@ -477,7 +520,65 @@ const Solicitudes = () => {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+
+              {/* Paginación - Solo mostrar cuando está en modo mes */}
+              {viewMode === 'month' && totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between border-t border-gray-200 pt-4">
+                  <div className="flex items-center text-sm text-gray-700">
+                    <span>
+                      Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, totalItems)} de {totalItems} solicitudes
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Anterior
+                    </button>
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum
+                        if (totalPages <= 5) {
+                          pageNum = i + 1
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i
+                        } else {
+                          pageNum = currentPage - 2 + i
+                        }
+                        
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-2 text-sm font-medium rounded-lg ${
+                              currentPage === pageNum
+                                ? 'bg-secondary-600 text-white'
+                                : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    >
+                      Siguiente
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="card p-12 text-center">
               <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />

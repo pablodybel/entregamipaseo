@@ -17,17 +17,20 @@ export const useFetch = (key, fetchFn, options = {}) => {
   
   // Serializar la key para usar como dependencia estable
   const keyString = Array.isArray(key) ? JSON.stringify(key) : key
+  const keyArray = Array.isArray(key) ? key : [key]
   
   // Usar refs para evitar que cambios causen re-renders
   const fetchFnRef = useRef(fetchFn)
   const enabledRef = useRef(enabled)
   const isFetchingRef = useRef(false)
+  const keyArrayRef = useRef(keyArray)
   
   // Actualizar refs cuando cambian
   useEffect(() => {
     fetchFnRef.current = fetchFn
     enabledRef.current = enabled
-  }, [fetchFn, enabled])
+    keyArrayRef.current = keyArray
+  }, [fetchFn, enabled, keyArray])
 
   const fetchData = useCallback(async () => {
     if (!enabledRef.current || isFetchingRef.current) {
@@ -51,6 +54,39 @@ export const useFetch = (key, fetchFn, options = {}) => {
       isFetchingRef.current = false
     }
   }, [])
+
+  // Escuchar eventos de invalidación de queries
+  useEffect(() => {
+    const handleInvalidate = (event) => {
+      const invalidatedKeys = event.detail?.keys || []
+      const currentKeyArray = keyArrayRef.current
+      
+      // Verificar si alguna de las keys invalidadas coincide con esta query
+      const shouldRefetch = invalidatedKeys.some(invalidatedKey => {
+        const invalidatedArray = Array.isArray(invalidatedKey) ? invalidatedKey : [invalidatedKey]
+        
+        // Si la key invalida es un prefijo de la key de esta query, o viceversa
+        // Ejemplo: ['walkRequests', 'pending'] debería invalidar ['walkRequests', 'pending', 'count']
+        if (invalidatedArray.length <= currentKeyArray.length) {
+          // Verificar si la key invalida es un prefijo de la key de la query
+          return invalidatedArray.every((key, index) => currentKeyArray[index] === key)
+        } else {
+          // Verificar si la key de la query es un prefijo de la key invalida
+          return currentKeyArray.every((key, index) => invalidatedArray[index] === key)
+        }
+      })
+      
+      if (shouldRefetch && enabledRef.current && !isFetchingRef.current) {
+        fetchData()
+      }
+    }
+
+    window.addEventListener('invalidateQuery', handleInvalidate)
+    
+    return () => {
+      window.removeEventListener('invalidateQuery', handleInvalidate)
+    }
+  }, [keyString, fetchData])
 
   useEffect(() => {
     // Solo hacer fetch si está habilitado

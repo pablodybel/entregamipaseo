@@ -1,12 +1,48 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Menu, X } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useFetch } from '../hooks/useFetch'
+import { walkRequestsService } from '../services/walkRequests'
 
 const Layout = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Obtener solicitudes pendientes para paseadores
+  const { data: pendingRequests } = useFetch(
+    ['walkRequests', 'pending', 'count'],
+    () => walkRequestsService.getMyWalkRequests('PENDING', 1, 1),
+    { 
+      enabled: user?.role === 'WALKER',
+      refetchInterval: 30000 // Refrescar cada 30 segundos
+    }
+  )
+
+  // Obtener solicitudes aceptadas (pago pendiente) para dueños
+  const { data: acceptedRequests } = useFetch(
+    ['walkRequests', 'accepted', 'all'],
+    () => walkRequestsService.getMyWalkRequests('ACCEPTED', 1, 1000), // Obtener todas para filtrar
+    { 
+      enabled: user?.role === 'OWNER',
+      refetchInterval: 30000 // Refrescar cada 30 segundos
+    }
+  )
+
+  // Filtrar solo las solicitudes ACCEPTED con fecha futura (pago pendiente)
+  const paymentPendingCount = useMemo(() => {
+    if (!acceptedRequests?.walkRequests || user?.role !== 'OWNER') return 0
+    
+    const now = new Date()
+    // Contar solo las que tienen fecha programada en el futuro
+    return acceptedRequests.walkRequests.filter(request => {
+      const requestDate = new Date(request.scheduledAt)
+      return requestDate >= now
+    }).length
+  }, [acceptedRequests, user?.role])
+
+  const pendingCount = pendingRequests?.pagination?.total || 0
 
   const handleLogout = async () => { /*Función que maneja el proceso de cerrar sesión, logout()*/ 
     const isAdmin = user?.role === 'ADMIN'
@@ -66,13 +102,25 @@ const Layout = () => {
             {/* vista de escritorio */}
             <nav className="hidden md:flex items-center space-x-2">
               {navigation.map((item) => {
+                // Badge para paseadores: solicitudes pendientes
+                const showWalkerBadge = item.name === 'Solicitudes' && user?.role === 'WALKER' && pendingCount > 0
+                // Badge para dueños: solicitudes con pago pendiente (ACCEPTED)
+                const showOwnerBadge = item.name === 'Solicitudes' && user?.role === 'OWNER' && paymentPendingCount > 0
+                const showBadge = showWalkerBadge || showOwnerBadge
+                const badgeCount = showWalkerBadge ? pendingCount : (showOwnerBadge ? paymentPendingCount : 0)
+                
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="inline-flex items-center px-6 py-3 text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200"
+                    className="inline-flex items-center px-6 py-3 text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all duration-200 relative"
                   >
                     {item.name}
+                    {showBadge && (
+                      <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                        {badgeCount > 99 ? '99+' : badgeCount}
+                      </span>
+                    )}
                   </Link>
                 )
               })}
@@ -129,14 +177,26 @@ const Layout = () => {
           <div className="md:hidden border-t border-gray-200 bg-white">
             <div className="pt-3 pb-4 space-y-1 px-4">
               {navigation.map((item) => {
+                // Badge para paseadores: solicitudes pendientes
+                const showWalkerBadge = item.name === 'Solicitudes' && user?.role === 'WALKER' && pendingCount > 0
+                // Badge para dueños: solicitudes con pago pendiente (ACCEPTED)
+                const showOwnerBadge = item.name === 'Solicitudes' && user?.role === 'OWNER' && paymentPendingCount > 0
+                const showBadge = showWalkerBadge || showOwnerBadge
+                const badgeCount = showWalkerBadge ? pendingCount : (showOwnerBadge ? paymentPendingCount : 0)
+                
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className="block px-4 py-3 text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
+                    className="flex items-center justify-between px-4 py-3 text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-all"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    {item.name}
+                    <span>{item.name}</span>
+                    {showBadge && (
+                      <span className="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-500 rounded-full">
+                        {badgeCount > 99 ? '99+' : badgeCount}
+                      </span>
+                    )}
                   </Link>
                 )
               })}

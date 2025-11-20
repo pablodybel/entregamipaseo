@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react'
 import { useFetch } from '../../hooks/useFetch'
-import { Calendar, Clock, ChevronLeft, ChevronRight, Star } from 'lucide-react'
+import { Calendar, Clock, ChevronLeft, ChevronRight, Star, CheckCircle, CreditCard, AlertCircle } from 'lucide-react'
 import { walkRequestsService } from '../../services/walkRequests'
 
 const MisSolicitudes = () => {
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [viewMode, setViewMode] = useState('month') // 'month' o 'day'
 
-  const { data: requests, isLoading } = useFetch(
+  const { data: requests, isLoading, refetch } = useFetch(
     ['walkRequests'],
-    () => walkRequestsService.getMyWalkRequests()
+    () => walkRequestsService.getMyWalkRequests(),
+    { refetchInterval: 30000 } // Refrescar cada 30 segundos para detectar cambios de estado
   )
 
   // Filtrar solicitudes por fecha seleccionada
@@ -299,13 +300,54 @@ const MisSolicitudes = () => {
                     </div>
                   )}
 
-                  {request.status === 'PENDING' && (
-                    <div className="mt-4">
-                      <button className="btn-outline text-red-600">
-                        Cancelar
-                      </button>
+                  {/* Aviso de pago pendiente cuando el paseo está aceptado */}
+                  {request.status === 'ACCEPTED' && (
+                    <div className="mt-4 bg-amber-50 border-2 border-amber-300 rounded-lg p-4 shadow-sm">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <AlertCircle className="h-6 w-6 text-amber-600" />
+                        </div>
+                        <div className="flex-1 ml-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-bold text-amber-900 text-lg">
+                              ⚠️ Pago Pendiente
+                            </h4>
+                            <span className="badge badge-warning text-xs font-semibold">
+                              Acción Requerida
+                            </span>
+                          </div>
+                          <p className="text-sm text-amber-800 mb-2">
+                            El paseador <strong>{request.walkerId?.name}</strong> ha aceptado tu solicitud de paseo.
+                          </p>
+                          <p className="text-sm font-medium text-amber-900">
+                            Para confirmar la reserva, completa el pago ahora.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   )}
+
+                  {/* Botones de acción */}
+                  <div className="mt-4 flex flex-wrap gap-2 pt-4 border-t">
+                    {request.status === 'PENDING' && (
+                      <button className="btn-outline text-red-600 border-red-300 hover:bg-red-50">
+                        Cancelar Solicitud
+                      </button>
+                    )}
+                    
+                    {request.status === 'ACCEPTED' && (
+                      <button className="btn-primary flex items-center">
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Pagar
+                      </button>
+                    )}
+                    
+                    {request.status === 'COMPLETED' && (
+                      <button className="btn-outline">
+                        Ver Detalles
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

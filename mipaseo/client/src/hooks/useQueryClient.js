@@ -9,6 +9,8 @@ const cache = new Map()
  */
 export const useQueryClient = () => {
   const invalidateQueries = useCallback((queryKey) => {
+    const keysToInvalidate = Array.isArray(queryKey) ? queryKey : [queryKey]
+    
     // Si es un array, buscar todas las keys que empiecen con ese prefijo
     if (Array.isArray(queryKey)) {
       const keyPrefix = queryKey.join('-')
@@ -20,6 +22,11 @@ export const useQueryClient = () => {
     } else {
       cache.delete(queryKey)
     }
+    
+    // Disparar evento personalizado para que useFetch escuche y refetch
+    window.dispatchEvent(new CustomEvent('invalidateQuery', {
+      detail: { keys: keysToInvalidate }
+    }))
   }, [])
 
   const clear = useCallback(() => {
