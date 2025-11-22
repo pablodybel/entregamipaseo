@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
+import PublicLayout from './components/PublicLayout'
+import Home from './pages/Home'
 import Login from './pages/Login'
 import LoginAdmin from './pages/admin/LoginAdmin'
 import Register from './pages/Register'
@@ -36,21 +38,24 @@ const App = () => {
 
   return (
     <Routes>
-      {/* Public routes */}
-      <Route path="/login" element={<Login />} />
+      {/* Public routes with PublicLayout */}
+      <Route path="/" element={<PublicLayout />}>
+        <Route index element={<Home />} />
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+      </Route>
+
+      {/* Admin login (separate route without PublicLayout) */}
       <Route path="/admin/login" element={<LoginAdmin />} />
-      <Route path="/register" element={<Register />} />
 
       {/* Protected routes */}
       <Route
-        path="/"
         element={
           <ProtectedRoute>
             <Layout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
 
         {/* Owner routes */}
@@ -164,7 +169,7 @@ const App = () => {
               <h1 className="text-2xl font-bold text-gray-900 mb-4">
                 Página no encontrada
               </h1>
-              <Navigate to="/dashboard" />
+              <Navigate to="/" />
             </div>
           </div>
         }
